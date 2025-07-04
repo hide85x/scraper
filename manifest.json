@@ -3,16 +3,8 @@
   "name": "Scrape Master",
   "version": "2.0",
   "description": "Scrape and download full-size images from any website.",
-  "permissions": [
-    "activeTab",
-    "storage",
-    "scripting",
-    "downloads",
-    "offscreen"
-  ],
-  "host_permissions": [
-    "https://scraper-ucn4.onrender.com/*"
-  ],
+  "permissions": ["activeTab", "storage", "scripting", "downloads", "offscreen"],
+  "host_permissions": ["https://scraper-ucn4.onrender.com/*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -26,23 +18,9 @@
   },
   "web_accessible_resources": [
     {
-      "resources": [
-        "assets/bg.png",
-        "assets/logo.png",
-        "assets/title.png",
-        "assets/scrape-button.png",
-        "assets/scrape-button-hover.png",
-        "offscreen.html"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
-    }
-  ],
-  "offscreen_documents": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["offscreen.js"]
+      "resources": ["assets/bg.png", "assets/logo.png", "assets/title.png", "assets/scrape-button.png", "assets/scrape-button-hover.png", "offscreen.html"],
+      "matches": ["<all_urls>"]
     }
   ]
 }
+
