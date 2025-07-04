@@ -38,5 +38,11 @@
         "<all_urls>"
       ]
     }
+  ],
+  "offscreen_documents": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["offscreen.js"]
+    }
   ]
 }
