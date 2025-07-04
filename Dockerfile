@@ -49,4 +49,4 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # Uruchomienie aplikacji
-CMD ["gunicorn", "--bind", "0.0.0.0:10000", "server:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:${PORT}", "server:app"]
