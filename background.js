@@ -21,7 +21,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     const targetUrl = message.url;
     console.log("Background: START_SCRAPE for URL:", targetUrl);
 
-
     ensureOffscreenDocument()
       .then(() => {
         // Forward the request to the offscreen doc
@@ -67,3 +66,4 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     sendResponse({ success: true });
   }
 });
+
