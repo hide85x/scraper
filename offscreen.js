@@ -20,7 +20,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 async function doScrapeAndPoll(url) {
-  const startRes = await fetch("http://localhost:5000/scrape", {
+  const startRes = await fetch("https://scraper-bxvu.onrender.com/scrape", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ url })
