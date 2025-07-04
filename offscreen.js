@@ -20,7 +20,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 async function doScrape(url) {
-  const apiUrl = 'https://scraper-ucn4.onrender.com/scrape';
+  const apiUrl = 'https://scraper-master-z5mg.onrender.com/scrape';
 
   console.log("Wysyłam request do:", apiUrl, "dla URL:", url);
 
