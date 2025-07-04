@@ -4,7 +4,7 @@
   "version": "2.0",
   "description": "Scrape and download full-size images from any website.",
   "permissions": ["activeTab", "storage", "scripting", "downloads", "offscreen"],
-  "host_permissions": ["https://scraper-ucn4.onrender.com/*"],
+  "host_permissions": ["https://scraper-master-z5mg.onrender.com/*"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
