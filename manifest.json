@@ -11,7 +11,7 @@
     "offscreen"
   ],
   "host_permissions": [
-    "http://localhost:5000/*"
+    "https://scraper-bxvu.onrender.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
