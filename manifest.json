@@ -11,7 +11,7 @@
     "offscreen"
   ],
   "host_permissions": [
-    "https://scraper-bxvu.onrender.com/*"
+    "https://scraper-ucn4.onrender.com/*"
   ],
   "action": {
     "default_popup": "popup.html",
