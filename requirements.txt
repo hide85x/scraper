@@ -1,0 +1,6 @@
+Flask
+selenium
+webdriver-manager
+requests
+flask-cors
+gunicorn

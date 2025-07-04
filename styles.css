@@ -1,0 +1,123 @@
+/* Reset default margins/padding and center the popup */
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #000; /* Optional: helps highlight the popup */
+}
+
+/* Container for all layers */
+.container {
+  position: relative;
+  width: 360px;
+  height: 480px;
+}
+
+/* All layers share these base properties */
+.layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 360px;
+  height: 480px;
+  flex-shrink: 0;
+  border-radius: 20px; /* Apply rounded corners on every layer */
+}
+
+/* Composite Background: contains your pattern and integrated title */
+.background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: url('./assets/bg.png') center/cover no-repeat;
+  z-index: 1;
+}
+/* Version text styling */
+.version-text {
+  position: absolute;
+  top: 20px;  /* 20px from the top */
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Blinker', sans-serif;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: normal;
+  text-shadow: 0px 3.165px 2.849px rgba(0, 0, 0, 0.25);
+  background: linear-gradient(94deg, #FDF4DF -4.8%, #F9CF5D 48.07%, #B76F35 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  z-index: 2;
+}
+/* Logo styling */
+.logo {
+  width: 280px;  /* Increased width */
+  height: 145px; /* Increased height */
+  background: url('./assets/logo.png') center/contain no-repeat;
+  position: absolute;
+  top: 75px;
+  left: 40%;
+  transform: translateX(-50%);
+  z-index: 6;
+}
+
+#scrapeButton {
+  width: 263px;
+  height: 88px; /* Maintaining the correct aspect ratio */
+  background: transparent url('./assets/scrape-button.png') no-repeat center;
+  background-size: 100% 100%;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  position: absolute;
+  top: 277px;  /* Positioned 40px below the title element */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  overflow: hidden;  /* Ensures pseudo-element stays inside the button */
+}
+
+/* Pseudo-element for hover effect */
+#scrapeButton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent url('./assets/scrape-button-hover.png') no-repeat center;
+  background-size: 100% 100%;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none; /* Prevents interfering with button clicks */
+}
+
+#scrapeButton:hover::after {
+  opacity: 1;
+}
+#status {
+    color: #FFF;
+    text-align: center;
+    font-family: Roboto, sans-serif;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: normal;
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 7;
+    width: 100%;
+}
+
+
+
+
+
