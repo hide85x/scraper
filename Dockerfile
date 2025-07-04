@@ -1,12 +1,11 @@
 FROM python:3.9
 
-# Instalacja zależności
+# Instalacja zależności systemowych
 RUN apt-get update && apt-get install -y \
     wget \
     unzip \
     ffmpeg \
     libnss3 \
-    libgconf-2-4 \
     libxi6 \
     libxcursor1 \
     libxcomposite1 \
@@ -22,4 +21,32 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libx11-6 \
     libxrender1 \
-    libxin
+    libxinerama1 \
+    libgl1-mesa-glx \
+    libgl1-mesa-dri \
+    libpango1.0-0 \
+    fonts-liberation \
+    libappindicator3-1 \
+    xdg-utils \
+    && rm -rf /var/lib/apt/lists/*
+
+# Pobranie i instalacja Google Chrome
+RUN wget -O /tmp/google-chrome.deb https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && dpkg -i /tmp/google-chrome.deb || apt-get -fy install \
+    && rm /tmp/google-chrome.deb
+
+# Ustawienie zmiennej środowiskowej dla Chrome
+ENV PATH="/usr/bin/google-chrome:${PATH}"
+
+# Ustawienie katalogu roboczego
+WORKDIR /app
+
+# Skopiowanie plików projektu
+COPY . /app
+
+# Instalacja zależności Pythona
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+# Uruchomienie aplikacji
+CMD ["gunicorn", "--bind", "0.0.0.0:10000", "server:app"]
