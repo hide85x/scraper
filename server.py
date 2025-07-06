@@ -65,19 +65,31 @@ def clean_and_generate_urls(url):
 
 def prioritize_jpg(url):
     original_url = re.sub(r'/\d+x\d+/', '/', url)
-    if ".webp" in original_url:
-        jpg_url = original_url.replace(".webp", ".jpeg")
-        jpg_alt_url = original_url.replace(".webp", ".jpg")
-        response = requests.head(jpg_url)
-        if response.status_code == 200:
-            return jpg_url
-        response = requests.head(jpg_alt_url)
-        if response.status_code == 200:
-            return jpg_alt_url
-    elif ".jpeg" in original_url or ".jpg" in original_url:
-        response = requests.head(original_url)
-        if response.status_code == 200:
-            return original_url
+
+    if original_url.startswith('//'):
+        original_url = 'https:' + original_url
+
+    try:
+        if ".webp" in original_url:
+            jpg_url = original_url.replace(".webp", ".jpeg")
+            jpg_alt_url = original_url.replace(".webp", ".jpg")
+
+            response = requests.head(jpg_url, timeout=5)
+            if response.status_code == 200:
+                return jpg_url
+
+            response = requests.head(jpg_alt_url, timeout=5)
+            if response.status_code == 200:
+                return jpg_alt_url
+
+        elif ".jpeg" in original_url or ".jpg" in original_url:
+            response = requests.head(original_url, timeout=5)
+            if response.status_code == 200:
+                return original_url
+
+    except Exception as e:
+        print(f'Błąd w requests.head dla {original_url}: {e}')
+
     return url
 
 def download_image(url, folder, base_url):
