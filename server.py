@@ -35,9 +35,10 @@ def scroll_page(driver):
     for img in images:
         try:
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", img)
-            time.sleep(0.3)
+            time.sleep(0.2)
         except Exception as e:
             print(f"Skipping image due to error: {e}")
+
 
 def trigger_slider(driver):
     try:
@@ -48,6 +49,7 @@ def trigger_slider(driver):
                 time.sleep(1)
     except Exception as e:
         print(f"Error interacting with slider: {e}")
+
 
 def clean_and_generate_urls(url):
     url = url.replace("/thumbs/", "/").replace("/thumb/", "/")
@@ -63,6 +65,7 @@ def clean_and_generate_urls(url):
     ]
     return list(dict.fromkeys(variations))
 
+
 def prioritize_jpg(url):
     original_url = re.sub(r'/\d+x\d+/', '/', url)
 
@@ -70,24 +73,25 @@ def prioritize_jpg(url):
         original_url = 'https:' + original_url
 
     try:
-        response = requests.head(original_url, timeout=5)
+        response = requests.head(original_url, timeout=7)
         if response.status_code == 200:
             return original_url
         else:
-            print(f"HEAD failed, trying GET for {original_url}")
-            response = requests.get(original_url, stream=True, timeout=5)
-            if response.status_code == 200:
-                return original_url
+            raise Exception(f"HEAD failed with status {response.status_code}")
     except Exception as e:
-        print(f'Błąd w requests.head dla {original_url}: {e}')
+        print(f"HEAD failed for {original_url}: {e}")
         try:
-            response = requests.get(original_url, stream=True, timeout=5)
+            response = requests.get(original_url, stream=True, timeout=7)
             if response.status_code == 200:
                 return original_url
+            else:
+                print(f"GET also failed with status {response.status_code}")
         except Exception as e2:
-            print(f'Błąd w fallback GET dla {original_url}: {e2}')
+            print(f"GET request failed for {original_url}: {e2}")
 
-    return url
+    print(f"Skipping broken URL: {original_url}")
+    return None
+
 
 def download_image(url, folder, base_url):
     try:
@@ -112,6 +116,7 @@ def download_image(url, folder, base_url):
         print(f"Failed to download {url}: {e}")
         return None
 
+
 def get_highest_resolution_image(srcset):
     try:
         src_list = [s.strip() for s in srcset.split(",")]
@@ -129,16 +134,6 @@ def get_highest_resolution_image(srcset):
         print(f"Error processing srcset: {e}")
     return None
 
-def sanitize_filename(filename):
-    return "".join(c if c.isalnum() or c in (' ', '.', '_') else '_' for c in filename)
-
-def get_meta_title(driver):
-    try:
-        title = driver.title.strip()
-        return sanitize_filename(title)
-    except Exception as e:
-        print(f"Error retrieving page title: {e}")
-        return "Unknown_Page"
 
 def extract_full_res_images(driver):
     image_urls = set()
@@ -148,12 +143,14 @@ def extract_full_res_images(driver):
         img_tag = link.find_elements(By.TAG_NAME, "img")
         if href and (".jpg" in href or ".jpeg" in href or ".png" in href or ".webp" in href):
             prioritized_url = prioritize_jpg(href)
-            image_urls.add(prioritized_url)
+            if prioritized_url:
+                image_urls.add(prioritized_url)
         if img_tag:
             img_src = img_tag[0].get_attribute("src")
             if img_src:
                 prioritized_url = prioritize_jpg(img_src)
-                image_urls.add(prioritized_url)
+                if prioritized_url:
+                    image_urls.add(prioritized_url)
 
     images = driver.find_elements(By.TAG_NAME, "img")
     for img in images:
@@ -165,15 +162,18 @@ def extract_full_res_images(driver):
             best_image = get_highest_resolution_image(data_srcset)
             if best_image:
                 prioritized_url = prioritize_jpg(best_image)
-                image_urls.add(prioritized_url)
+                if prioritized_url:
+                    image_urls.add(prioritized_url)
         elif srcset:
             best_image = get_highest_resolution_image(srcset)
             if best_image:
                 prioritized_url = prioritize_jpg(best_image)
-                image_urls.add(prioritized_url)
+                if prioritized_url:
+                    image_urls.add(prioritized_url)
         elif src:
             prioritized_url = prioritize_jpg(src)
-            image_urls.add(prioritized_url)
+            if prioritized_url:
+                image_urls.add(prioritized_url)
 
     pictures = driver.find_elements(By.TAG_NAME, "picture")
     for picture in pictures:
@@ -184,21 +184,24 @@ def extract_full_res_images(driver):
                 best_image = get_highest_resolution_image(srcset)
                 if best_image:
                     prioritized_url = prioritize_jpg(best_image)
-                    image_urls.add(prioritized_url)
+                    if prioritized_url:
+                        image_urls.add(prioritized_url)
 
     og_image = driver.find_elements(By.XPATH, "//meta[@property='og:image']")
     for meta in og_image:
         content = meta.get_attribute("content")
         if content:
             prioritized_url = prioritize_jpg(content)
-            image_urls.add(prioritized_url)
+            if prioritized_url:
+                image_urls.add(prioritized_url)
 
     lazy_images = driver.find_elements(By.TAG_NAME, "img")
     for img in lazy_images:
         for attr in img.get_property("attributes"):
             if "data-" in attr["name"] and (".jpg" in attr["value"] or ".jpeg" in attr["value"] or ".png" in attr["value"] or ".webp" in attr["value"]):
                 prioritized_url = prioritize_jpg(attr["value"])
-                image_urls.add(prioritized_url)
+                if prioritized_url:
+                    image_urls.add(prioritized_url)
 
     elements_with_bg = driver.find_elements(By.XPATH, "//*[contains(@style, 'background-image')]")
     for elem in elements_with_bg:
@@ -207,11 +210,25 @@ def extract_full_res_images(driver):
             start = style.find('url(') + 4
             end = style.find(')', start)
             img_url = style[start:end].replace('"', '').replace("'", '')
-            if img_url:
-                prioritized_url = prioritize_jpg(img_url)
+            prioritized_url = prioritize_jpg(img_url)
+            if prioritized_url:
                 image_urls.add(prioritized_url)
 
     return image_urls
+
+
+def sanitize_filename(filename):
+    return "".join(c if c.isalnum() or c in (' ', '.', '_') else '_' for c in filename)
+
+
+def get_meta_title(driver):
+    try:
+        title = driver.title.strip()
+        return sanitize_filename(title)
+    except Exception as e:
+        print(f"Error retrieving page title: {e}")
+        return "Unknown_Page"
+
 
 @app.route('/scrape', methods=['POST'])
 def scrape_images():
@@ -219,16 +236,6 @@ def scrape_images():
     website_url = data.get("url")
     if not website_url:
         return jsonify({"error": "No URL provided"}), 400
-
-    # Czyszczenie katalogu przed scrapowaniem
-    if os.path.exists('downloaded_images'):
-        for root, dirs, files in os.walk('downloaded_images', topdown=False):
-            for file in files:
-                os.remove(os.path.join(root, file))
-            for dir in dirs:
-                os.rmdir(os.path.join(root, dir))
-    else:
-        os.makedirs('downloaded_images', exist_ok=True)
 
     chrome_options = Options()
     temp_dir = tempfile.mkdtemp()
@@ -261,7 +268,7 @@ def scrape_images():
         driver.quit()
         return jsonify({"error": "Timeout or loading error"}), 500
 
-    time.sleep(6)
+    time.sleep(5)
     scroll_page(driver)
     trigger_slider(driver)
 
@@ -289,6 +296,7 @@ def scrape_images():
     })
     return response
 
+
 @app.route('/download_zip')
 def download_zip():
     zipf = zipfile.ZipFile('/tmp/images.zip', 'w', zipfile.ZIP_DEFLATED)
@@ -303,6 +311,7 @@ def download_zip():
     print("ZIP gotowy do pobrania.")
 
     return send_file('/tmp/images.zip', mimetype='application/zip', as_attachment=True)
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
