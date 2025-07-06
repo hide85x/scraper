@@ -9,12 +9,18 @@ import requests
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.chrome.service import Service
+import chromedriver_autoinstaller
+import zipfile
 
 app = Flask(__name__)
 CORS(app)
 
+# Automatyczna instalacja chromedrivera
+chromedriver_autoinstaller.install()
+
+# Funkcja scrollowania strony (lazy load)
 def scroll_page(driver):
     last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
@@ -25,7 +31,7 @@ def scroll_page(driver):
             break
         last_height = new_height
 
-    images = driver.find_elements("tag name", "img")
+    images = driver.find_elements(By.TAG_NAME, "img")
     for img in images:
         try:
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", img)
@@ -35,7 +41,7 @@ def scroll_page(driver):
 
 def trigger_slider(driver):
     try:
-        next_buttons = driver.find_elements("class name", "slick-next")
+        next_buttons = driver.find_elements(By.CLASS_NAME, "slick-next")
         for btn in next_buttons:
             for _ in range(5):
                 btn.click()
@@ -116,10 +122,10 @@ def get_highest_resolution_image(srcset):
 
 def extract_full_res_images(driver):
     image_urls = set()
-    links = driver.find_elements("tag name", "a")
+    links = driver.find_elements(By.TAG_NAME, "a")
     for link in links:
         href = link.get_attribute("href")
-        img_tag = link.find_elements("tag name", "img")
+        img_tag = link.find_elements(By.TAG_NAME, "img")
         if href and (".jpg" in href or ".jpeg" in href or ".png" in href or ".webp" in href):
             prioritized_url = prioritize_jpg(href)
             image_urls.add(prioritized_url)
@@ -129,7 +135,7 @@ def extract_full_res_images(driver):
                 prioritized_url = prioritize_jpg(img_src)
                 image_urls.add(prioritized_url)
 
-    images = driver.find_elements("tag name", "img")
+    images = driver.find_elements(By.TAG_NAME, "img")
     for img in images:
         data_srcset = img.get_attribute("data-srcset")
         srcset = img.get_attribute("srcset")
@@ -147,6 +153,41 @@ def extract_full_res_images(driver):
                 image_urls.add(prioritized_url)
         elif src:
             prioritized_url = prioritize_jpg(src)
+            image_urls.add(prioritized_url)
+
+    pictures = driver.find_elements(By.TAG_NAME, "picture")
+    for picture in pictures:
+        sources = picture.find_elements(By.TAG_NAME, "source")
+        for source in sources:
+            srcset = source.get_attribute("srcset")
+            if srcset:
+                best_image = get_highest_resolution_image(srcset)
+                if best_image:
+                    prioritized_url = prioritize_jpg(best_image)
+                    image_urls.add(prioritized_url)
+
+    og_image = driver.find_elements(By.XPATH, "//meta[@property='og:image']")
+    for meta in og_image:
+        content = meta.get_attribute("content")
+        if content:
+            prioritized_url = prioritize_jpg(content)
+            image_urls.add(prioritized_url)
+
+    lazy_images = driver.find_elements(By.TAG_NAME, "img")
+    for img in lazy_images:
+        for attr in img.get_property("attributes"):
+            if "data-" in attr["name"] and (".jpg" in attr["value"] or ".jpeg" in attr["value"] or ".png" in attr["value"] or ".webp" in attr["value"]):
+                prioritized_url = prioritize_jpg(attr["value"])
+                image_urls.add(prioritized_url)
+
+    elements_with_bg = driver.find_elements(By.XPATH, "//*[contains(@style, 'background-image')]")
+    for elem in elements_with_bg:
+        style = elem.get_attribute('style')
+        if 'background-image' in style:
+            start = style.find('url(') + 4
+            end = style.find(')', start)
+            img_url = style[start:end].replace('"', '').replace("'", '')
+            prioritized_url = prioritize_jpg(img_url)
             image_urls.add(prioritized_url)
 
     return image_urls
@@ -173,7 +214,7 @@ def scrape_images():
     temp_dir = tempfile.mkdtemp()
     chrome_options.add_argument(f"--user-data-dir={temp_dir}")
     chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--no-first-run")
@@ -181,8 +222,6 @@ def scrape_images():
     chrome_options.add_argument("--disable-extensions")
     chrome_options.add_argument("--disable-application-cache")
     chrome_options.add_argument("--incognito")
-    chrome_options.add_argument("--window-size=1920,1080")
-    chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36')
 
     try:
         driver = webdriver.Chrome(options=chrome_options)
@@ -191,47 +230,28 @@ def scrape_images():
         print(f"Błąd przy starcie Chrome: {e}")
         return jsonify({"error": "Chrome startup failed"}), 500
 
-    try:
-        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-        driver.execute_cdp_cmd('Network.setUserAgentOverride', {
-            "userAgent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
-            "acceptLanguage": "en-US,en;q=0.9"
-        })
-    except Exception as e:
-        print(f"Błąd podczas ustawiania stealth: {e}")
-
     print(f"Processing: {website_url}")
-    driver.set_page_load_timeout(30)
+    driver.set_page_load_timeout(60)
 
     try:
         driver.get(website_url)
         print("Strona załadowana, kontynuuję scrapowanie.")
-        driver.save_screenshot("/tmp/screenshot.png")
-        print("Screenshot zapisany zaraz po załadowaniu strony.")
     except Exception as e:
         print(f"Błąd ładowania strony: {e}")
-        driver.save_screenshot("/tmp/screenshot.png")
-        print("Screenshot zapisany przy błędzie ładowania strony.")
         driver.quit()
         return jsonify({"error": "Timeout or loading error"}), 500
 
-    time.sleep(10)
+    time.sleep(5)
     scroll_page(driver)
     trigger_slider(driver)
 
     page_title = get_meta_title(driver)
     image_urls = extract_full_res_images(driver)
+    driver.quit()
     print(f"Znaleziono {len(image_urls)} obrazów.")
     print(f"Serwer: Strona załadowana, tytuł: {page_title}")
-
     if not image_urls:
-        driver.save_screenshot("/tmp/screenshot.png")
-        print("Screenshot zapisany przed zakończeniem (brak zdjęć).")
-        driver.quit()
         return jsonify({"message": "No images found", "images": []})
-
-    driver.save_screenshot("/tmp/screenshot.png")
-    print("Screenshot zapisany przed zakończeniem (z obrazkami).")
 
     folder_name = os.path.join("downloaded_images", page_title)
     os.makedirs(folder_name, exist_ok=True)
@@ -242,8 +262,6 @@ def scrape_images():
     saved_files = [f for f in os.listdir(folder_name) if os.path.isfile(os.path.join(folder_name, f))]
     count = len(saved_files)
 
-    driver.quit()
-
     response = jsonify({
         "message": f"Scraping complete, downloaded {count} images",
         "images": saved_files,
@@ -251,12 +269,20 @@ def scrape_images():
     })
     return response
 
-@app.route('/screenshot')
-def get_screenshot():
-    screenshot_path = "/tmp/screenshot.png"
-    if not os.path.exists(screenshot_path):
-        return jsonify({"error": "Screenshot not found"}), 404
-    return send_file(screenshot_path, mimetype='image/png')
+@app.route('/download_zip')
+def download_zip():
+    zipf = zipfile.ZipFile('/tmp/images.zip', 'w', zipfile.ZIP_DEFLATED)
+    base_folder = 'downloaded_images'
+
+    for root, dirs, files in os.walk(base_folder):
+        for file in files:
+            file_path = os.path.join(root, file)
+            zipf.write(file_path, arcname=file)
+
+    zipf.close()
+    print("ZIP gotowy do pobrania.")
+
+    return send_file('/tmp/images.zip', mimetype='application/zip', as_attachment=True)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
