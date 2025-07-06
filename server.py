@@ -70,25 +70,22 @@ def prioritize_jpg(url):
         original_url = 'https:' + original_url
 
     try:
-        if ".webp" in original_url:
-            jpg_url = original_url.replace(".webp", ".jpeg")
-            jpg_alt_url = original_url.replace(".webp", ".jpg")
-
-            response = requests.head(jpg_url, timeout=5)
-            if response.status_code == 200:
-                return jpg_url
-
-            response = requests.head(jpg_alt_url, timeout=5)
-            if response.status_code == 200:
-                return jpg_alt_url
-
-        elif ".jpeg" in original_url or ".jpg" in original_url:
-            response = requests.head(original_url, timeout=5)
+        response = requests.head(original_url, timeout=5)
+        if response.status_code == 200:
+            return original_url
+        else:
+            print(f"HEAD failed, trying GET for {original_url}")
+            response = requests.get(original_url, stream=True, timeout=5)
             if response.status_code == 200:
                 return original_url
-
     except Exception as e:
         print(f'Błąd w requests.head dla {original_url}: {e}')
+        try:
+            response = requests.get(original_url, stream=True, timeout=5)
+            if response.status_code == 200:
+                return original_url
+        except Exception as e2:
+            print(f'Błąd w fallback GET dla {original_url}: {e2}')
 
     return url
 
@@ -131,6 +128,17 @@ def get_highest_resolution_image(srcset):
     except Exception as e:
         print(f"Error processing srcset: {e}")
     return None
+
+def sanitize_filename(filename):
+    return "".join(c if c.isalnum() or c in (' ', '.', '_') else '_' for c in filename)
+
+def get_meta_title(driver):
+    try:
+        title = driver.title.strip()
+        return sanitize_filename(title)
+    except Exception as e:
+        print(f"Error retrieving page title: {e}")
+        return "Unknown_Page"
 
 def extract_full_res_images(driver):
     image_urls = set()
@@ -199,21 +207,11 @@ def extract_full_res_images(driver):
             start = style.find('url(') + 4
             end = style.find(')', start)
             img_url = style[start:end].replace('"', '').replace("'", '')
-            prioritized_url = prioritize_jpg(img_url)
-            image_urls.add(prioritized_url)
+            if img_url:
+                prioritized_url = prioritize_jpg(img_url)
+                image_urls.add(prioritized_url)
 
     return image_urls
-
-def sanitize_filename(filename):
-    return "".join(c if c.isalnum() or c in (' ', '.', '_') else '_' for c in filename)
-
-def get_meta_title(driver):
-    try:
-        title = driver.title.strip()
-        return sanitize_filename(title)
-    except Exception as e:
-        print(f"Error retrieving page title: {e}")
-        return "Unknown_Page"
 
 @app.route('/scrape', methods=['POST'])
 def scrape_images():
@@ -221,6 +219,16 @@ def scrape_images():
     website_url = data.get("url")
     if not website_url:
         return jsonify({"error": "No URL provided"}), 400
+
+    # Czyszczenie katalogu przed scrapowaniem
+    if os.path.exists('downloaded_images'):
+        for root, dirs, files in os.walk('downloaded_images', topdown=False):
+            for file in files:
+                os.remove(os.path.join(root, file))
+            for dir in dirs:
+                os.rmdir(os.path.join(root, dir))
+    else:
+        os.makedirs('downloaded_images', exist_ok=True)
 
     chrome_options = Options()
     temp_dir = tempfile.mkdtemp()
@@ -266,14 +274,7 @@ def scrape_images():
         return jsonify({"message": "No images found", "images": []})
 
     folder_name = os.path.join("downloaded_images", page_title)
-    if os.path.exists('downloaded_images'):
-    for root, dirs, files in os.walk('downloaded_images', topdown=False):
-        for file in files:
-            os.remove(os.path.join(root, file))
-        for dir in dirs:
-            os.rmdir(os.path.join(root, dir))
-else:
-    os.makedirs('downloaded_images', exist_ok=True)
+    os.makedirs(folder_name, exist_ok=True)
 
     for img_url in image_urls:
         download_image(img_url, folder_name, website_url)
