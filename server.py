@@ -2,6 +2,7 @@ import os
 import time
 import re
 import tempfile
+import shutil
 from urllib.parse import urljoin, urlparse
 from pathlib import Path
 
@@ -17,10 +18,14 @@ import zipfile
 app = Flask(__name__)
 CORS(app)
 
-# Automatyczna instalacja chromedrivera
 chromedriver_autoinstaller.install()
 
-# Funkcja scrollowania strony (lazy load)
+def clear_download_folder():
+    base_folder = 'downloaded_images'
+    if os.path.exists(base_folder):
+        shutil.rmtree(base_folder)
+    os.makedirs(base_folder, exist_ok=True)
+
 def scroll_page(driver):
     last_height = driver.execute_script("return document.body.scrollHeight")
     while True:
@@ -39,7 +44,6 @@ def scroll_page(driver):
         except Exception as e:
             print(f"Skipping image due to error: {e}")
 
-
 def trigger_slider(driver):
     try:
         next_buttons = driver.find_elements(By.CLASS_NAME, "slick-next")
@@ -49,7 +53,6 @@ def trigger_slider(driver):
                 time.sleep(1)
     except Exception as e:
         print(f"Error interacting with slider: {e}")
-
 
 def clean_and_generate_urls(url):
     url = url.replace("/thumbs/", "/").replace("/thumb/", "/")
@@ -64,7 +67,6 @@ def clean_and_generate_urls(url):
         url.replace('/thumb/', '/')
     ]
     return list(dict.fromkeys(variations))
-
 
 def prioritize_jpg(url):
     original_url = re.sub(r'/\d+x\d+/', '/', url)
@@ -92,7 +94,6 @@ def prioritize_jpg(url):
     print(f"Skipping broken URL: {original_url}")
     return None
 
-
 def download_image(url, folder, base_url):
     try:
         url = urljoin(base_url, url)
@@ -116,7 +117,6 @@ def download_image(url, folder, base_url):
         print(f"Failed to download {url}: {e}")
         return None
 
-
 def get_highest_resolution_image(srcset):
     try:
         src_list = [s.strip() for s in srcset.split(",")]
@@ -133,7 +133,6 @@ def get_highest_resolution_image(srcset):
     except Exception as e:
         print(f"Error processing srcset: {e}")
     return None
-
 
 def extract_full_res_images(driver):
     image_urls = set()
@@ -216,10 +215,8 @@ def extract_full_res_images(driver):
 
     return image_urls
 
-
 def sanitize_filename(filename):
     return "".join(c if c.isalnum() or c in (' ', '.', '_') else '_' for c in filename)
-
 
 def get_meta_title(driver):
     try:
@@ -228,7 +225,6 @@ def get_meta_title(driver):
     except Exception as e:
         print(f"Error retrieving page title: {e}")
         return "Unknown_Page"
-
 
 @app.route('/scrape', methods=['POST'])
 def scrape_images():
@@ -298,7 +294,6 @@ def scrape_images():
     })
     return response
 
-
 @app.route('/download_zip')
 def download_zip():
     zipf = zipfile.ZipFile('/tmp/images.zip', 'w', zipfile.ZIP_DEFLATED)
@@ -313,17 +308,6 @@ def download_zip():
     print("ZIP gotowy do pobrania.")
 
     return send_file('/tmp/images.zip', mimetype='application/zip', as_attachment=True)
-
-
-def clear_download_folder():
-    base_folder = 'downloaded_images'
-    if os.path.exists(base_folder):
-        for root, dirs, files in os.walk(base_folder):
-            for file in files:
-                os.remove(os.path.join(root, file))
-            for dir in dirs:
-                os.rmdir(os.path.join(root, dir))
-
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
