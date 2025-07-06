@@ -261,7 +261,7 @@ def scrape_images():
         driver.quit()
         return jsonify({"error": "Timeout or loading error"}), 500
 
-    time.sleep(10)
+    time.sleep(6)
     scroll_page(driver)
     trigger_slider(driver)
 
