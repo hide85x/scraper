@@ -35,7 +35,7 @@ def scroll_page(driver):
     for img in images:
         try:
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", img)
-            time.sleep(0.2)
+            time.sleep(0.3)
         except Exception as e:
             print(f"Skipping image due to error: {e}")
 
@@ -261,7 +261,7 @@ def scrape_images():
         driver.quit()
         return jsonify({"error": "Timeout or loading error"}), 500
 
-    time.sleep(5)
+    time.sleep(10)
     scroll_page(driver)
     trigger_slider(driver)
 
