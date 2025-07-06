@@ -266,7 +266,14 @@ def scrape_images():
         return jsonify({"message": "No images found", "images": []})
 
     folder_name = os.path.join("downloaded_images", page_title)
-    os.makedirs(folder_name, exist_ok=True)
+    if os.path.exists('downloaded_images'):
+    for root, dirs, files in os.walk('downloaded_images', topdown=False):
+        for file in files:
+            os.remove(os.path.join(root, file))
+        for dir in dirs:
+            os.rmdir(os.path.join(root, dir))
+else:
+    os.makedirs('downloaded_images', exist_ok=True)
 
     for img_url in image_urls:
         download_image(img_url, folder_name, website_url)
