@@ -232,6 +232,8 @@ def get_meta_title(driver):
 
 @app.route('/scrape', methods=['POST'])
 def scrape_images():
+    clear_download_folder()
+
     data = request.json
     website_url = data.get("url")
     if not website_url:
@@ -268,7 +270,7 @@ def scrape_images():
         driver.quit()
         return jsonify({"error": "Timeout or loading error"}), 500
 
-    time.sleep(5)
+    time.sleep(6)
     scroll_page(driver)
     trigger_slider(driver)
 
@@ -311,6 +313,16 @@ def download_zip():
     print("ZIP gotowy do pobrania.")
 
     return send_file('/tmp/images.zip', mimetype='application/zip', as_attachment=True)
+
+
+def clear_download_folder():
+    base_folder = 'downloaded_images'
+    if os.path.exists(base_folder):
+        for root, dirs, files in os.walk(base_folder):
+            for file in files:
+                os.remove(os.path.join(root, file))
+            for dir in dirs:
+                os.rmdir(os.path.join(root, dir))
 
 
 if __name__ == "__main__":
