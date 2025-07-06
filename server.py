@@ -201,7 +201,7 @@ def scrape_images():
         print(f"Błąd podczas ustawiania stealth: {e}")
 
     print(f"Processing: {website_url}")
-    driver.set_page_load_timeout(15)
+    driver.set_page_load_timeout(30)
 
     try:
         driver.get(website_url)
