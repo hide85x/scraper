@@ -182,6 +182,7 @@ def scrape_images():
     chrome_options.add_argument("--disable-application-cache")
     chrome_options.add_argument("--incognito")
     chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36')
 
     try:
         driver = webdriver.Chrome(options=chrome_options)
@@ -189,6 +190,15 @@ def scrape_images():
     except Exception as e:
         print(f"Błąd przy starcie Chrome: {e}")
         return jsonify({"error": "Chrome startup failed"}), 500
+
+    try:
+        driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+        driver.execute_cdp_cmd('Network.setUserAgentOverride', {
+            "userAgent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36',
+            "acceptLanguage": "en-US,en;q=0.9"
+        })
+    except Exception as e:
+        print(f"Błąd podczas ustawiania stealth: {e}")
 
     print(f"Processing: {website_url}")
     driver.set_page_load_timeout(15)
