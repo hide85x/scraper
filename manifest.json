@@ -3,8 +3,16 @@
   "name": "Scrape Master",
   "version": "2.0",
   "description": "Scrape and download full-size images from any website.",
-  "permissions": ["activeTab", "storage", "scripting", "downloads", "offscreen"],
-  "host_permissions": ["https://scraper-4-1owt.onrender.com/*"],
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting",
+    "downloads",
+    "offscreen"
+  ],
+  "host_permissions": [
+    "https://web-production-0474.up.railway.app/*"
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
@@ -18,9 +26,17 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["assets/bg.png", "assets/logo.png", "assets/title.png", "assets/scrape-button.png", "assets/scrape-button-hover.png", "offscreen.html"],
-      "matches": ["<all_urls>"]
+      "resources": [
+        "assets/bg.png",
+        "assets/logo.png",
+        "assets/title.png",
+        "assets/scrape-button.png",
+        "assets/scrape-button-hover.png",
+        "offscreen.html"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
     }
   ]
 }
-

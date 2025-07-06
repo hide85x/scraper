@@ -1,5 +1,3 @@
-// background.js
-
 // Ensure offscreen doc is created
 async function ensureOffscreenDocument() {
   const alreadyExists = await chrome.offscreen.hasDocument();
@@ -48,22 +46,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     return true; // async response
   }
-  else if (message.type === "DOWNLOAD_ZIP") {
+
+  else if (message.type === "SCRAPE_COMPLETE") {
+    console.log("Background: Received SCRAPE_COMPLETE.");
+
     const dlUrl = message.url;
     const imagesCount = message.imagesCount || 0;
-    console.log("Background: DOWNLOAD_ZIP for url:", dlUrl);
 
-    // Use chrome.downloads.download to trigger the file download
-    chrome.downloads.download({ url: dlUrl }, (downloadId) => {
-      console.log("Background: Download started, ID:", downloadId);
-      // After initiating download, send a message to update the popup UI (if open)
-      chrome.runtime.sendMessage({
-        type: "SCRAPE_COMPLETE",
-        message: `Success! Downloaded: ${imagesCount} images.`
+    if (imagesCount > 0) {
+      console.log("Background: Starting ZIP download for:", dlUrl);
+      // Use chrome.downloads.download to trigger the file download
+      chrome.downloads.download({ url: dlUrl }, (downloadId) => {
+        console.log("Background: Download started, ID:", downloadId);
+        // After initiating download, send a message to update the popup UI (if open)
+        chrome.runtime.sendMessage({
+          type: "ZIP_DOWNLOADING",
+          message: `Pobieranie ZIP rozpoczęte. Pobieranych obrazów: ${imagesCount}`
+        });
       });
-    });
+    } else {
+      console.log("Background: No images found, ZIP download skipped.");
+      chrome.runtime.sendMessage({
+        type: "ZIP_DOWNLOADING",
+        message: "Brak zdjęć do pobrania."
+      });
+    }
 
     sendResponse({ success: true });
   }
 });
-

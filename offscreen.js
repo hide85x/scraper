@@ -20,7 +20,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 async function doScrape(url) {
-  const apiUrl = 'https://scraper-4-1owt.onrender.com/scrape';
+  const apiUrl = 'https://web-production-0474.up.railway.app/scrape';
 
   console.log("Wysyłam request do:", apiUrl, "dla URL:", url);
 
@@ -39,8 +39,12 @@ async function doScrape(url) {
   const responseData = await response.json();
   console.log("Odpowiedź z serwera:", responseData);
 
+
+
   chrome.runtime.sendMessage({
     type: "SCRAPE_COMPLETE",
+    url: 'https://web-production-0474.up.railway.app/download_zip',
+    imagesCount: responseData.images.length,
     message: responseData.message
   });
 }
