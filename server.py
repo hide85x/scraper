@@ -54,9 +54,14 @@ def trigger_slider(driver):
     try:
         next_buttons = driver.find_elements(By.CLASS_NAME, "slick-next")
         for btn in next_buttons:
+            if not btn.is_displayed():
+                continue
             for _ in range(5):
-                btn.click()
-                time.sleep(1)
+                try:
+                    driver.execute_script("arguments[0].click();", btn)
+                    time.sleep(1)
+                except Exception as e:
+                    print(f"Slider click error: {e}")
     except Exception as e:
         print(f"Error interacting with slider: {e}")
 
