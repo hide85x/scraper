@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y \
     fonts-liberation \
     libappindicator3-1 \
     xdg-utils \
+    **ca-certificates** \
     && rm -rf /var/lib/apt/lists/*
 
 # Pobranie i instalacja Google Chrome
