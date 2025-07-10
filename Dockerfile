@@ -50,4 +50,4 @@ RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
 # Uruchomienie aplikacji
-CMD gunicorn --bind 0.0.0.0:$PORT --timeout 180 server:app
+CMD gunicorn --bind 0.0.0.0:$PORT --timeout 300 server:app
