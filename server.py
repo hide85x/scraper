@@ -4,6 +4,7 @@ import re
 import tempfile
 import shutil
 import certifi
+import urllib3
 from urllib.parse import urljoin, urlparse
 from pathlib import Path
 
@@ -16,6 +17,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 import chromedriver_autoinstaller
 import zipfile
+
+# Wyłączanie ostrzeżeń o niezweryfikowanych certyfikatach
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 app = Flask(__name__)
 CORS(app)
