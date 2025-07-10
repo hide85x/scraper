@@ -108,7 +108,7 @@ def prioritize_jpg(url):
 
     print(f"Skipping broken URL: {original_url}")
     return None
-
+    
 def download_image(url, folder, base_url):
     try:
         url = urljoin(base_url, url)
@@ -118,13 +118,12 @@ def download_image(url, folder, base_url):
         for full_size_url in full_size_urls:
             for verify_ssl in [certifi.where(), False]:
                 try:
-                    response = requests.get(full_size_url, headers=headers, stream=True, timeout=15, verify=verify_ssl)
+                    response = requests.get(full_size_url, headers=headers, timeout=15, verify=verify_ssl)
                     if response.status_code == 200:
                         filename = sanitize_filename(os.path.basename(urlparse(full_size_url).path)) or f"image_{int(time.time())}.jpg"
                         file_path = os.path.join(folder, filename)
                         with open(file_path, 'wb') as f:
-                            for chunk in response.iter_content(1024):
-                                f.write(chunk)
+                            f.write(response.content)
                         return filename
                 except (SSLError, ConnectionError) as ssl_err:
                     if not verify_ssl:
