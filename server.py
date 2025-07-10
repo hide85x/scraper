@@ -3,6 +3,7 @@ import time
 import re
 import tempfile
 import shutil
+import certifi
 from urllib.parse import urljoin, urlparse
 from pathlib import Path
 
@@ -75,7 +76,7 @@ def prioritize_jpg(url):
         original_url = 'https:' + original_url
 
     try:
-        response = requests.head(original_url, timeout=7)
+        response = requests.head(original_url, timeout=7, verify=certifi.where())
         if response.status_code == 200:
             return original_url
         else:
@@ -83,7 +84,7 @@ def prioritize_jpg(url):
     except Exception as e:
         print(f"HEAD failed for {original_url}: {e}")
         try:
-            response = requests.get(original_url, stream=True, timeout=7)
+            response = requests.get(original_url, stream=True, timeout=7, verify=certifi.where())
             if response.status_code == 200:
                 return original_url
             else:
@@ -101,7 +102,7 @@ def download_image(url, folder, base_url):
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/91.0.4472.124 Safari/537.36'}
 
         for full_size_url in full_size_urls:
-            response = requests.get(full_size_url, headers=headers, stream=True)
+            response = requests.get(full_size_url, headers=headers, stream=True, verify=certifi.where())
             if response.status_code == 200:
                 filename = sanitize_filename(os.path.basename(urlparse(full_size_url).path))
                 if not filename:
